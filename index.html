@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic-Tac-Toe vs Unbeatable AI</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- Header: pinned to the top — brand, live turn subtitle, and the scoreboard. -->
+    <header class="app-header">
+      <div class="brand">
+        <h1>Tic-Tac-Toe</h1>
+        <p class="subtitle">You are <span class="mark-x">X</span> &middot; Computer is <span class="mark-o">O</span></p>
+      </div>
+
+      <div class="scoreboard" aria-label="Scoreboard">
+        <div class="score-item">
+          <span class="score-value" id="score-player">0</span>
+          <span class="score-label">You (X)</span>
+        </div>
+        <div class="score-item">
+          <span class="score-value" id="score-ties">0</span>
+          <span class="score-label">Ties</span>
+        </div>
+        <div class="score-item">
+          <span class="score-value" id="score-ai">0</span>
+          <span class="score-label">AI (O)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Board container: flex-grow fills the middle space and centers the board. -->
+    <main class="board-container">
+      <p id="status" class="status" role="status" aria-live="polite">Your turn (X)</p>
+
+      <div id="board" class="board">
+        <button class="cell" data-index="0" aria-label="Cell 1"></button>
+        <button class="cell" data-index="1" aria-label="Cell 2"></button>
+        <button class="cell" data-index="2" aria-label="Cell 3"></button>
+        <button class="cell" data-index="3" aria-label="Cell 4"></button>
+        <button class="cell" data-index="4" aria-label="Cell 5"></button>
+        <button class="cell" data-index="5" aria-label="Cell 6"></button>
+        <button class="cell" data-index="6" aria-label="Cell 7"></button>
+        <button class="cell" data-index="7" aria-label="Cell 8"></button>
+        <button class="cell" data-index="8" aria-label="Cell 9"></button>
+      </div>
+    </main>
+
+    <!-- Footer: pinned to the bottom — round settings and the play-again control. -->
+    <footer class="app-footer">
+      <div class="footer-controls">
+        <div class="first-player" role="group" aria-label="Choose who goes first">
+          <span class="first-player-label">First move:</span>
+          <div class="first-player-toggle">
+            <button type="button" class="toggle-btn" id="first-player-human" data-player="human" aria-pressed="true">You (X)</button>
+            <button type="button" class="toggle-btn" id="first-player-ai" data-player="ai" aria-pressed="false">AI (O)</button>
+          </div>
+        </div>
+
+        <!-- Informational badge, not a clickable control: the AI only ever
+             plays a full Minimax search, so there's no real difficulty
+             setting to toggle yet — this just names the engine honestly. -->
+        <div class="difficulty" aria-label="AI difficulty">
+          <span class="difficulty-label">Difficulty:</span>
+          <span class="difficulty-badge">Minimax AI &middot; Unbeatable</span>
+        </div>
+      </div>
+
+      <button id="restart-btn" class="restart-btn">Play Again</button>
+    </footer>
+
+  </div>
+
+  <!-- Load order matters: engine -> AI (depends on engine) -> UI -> app (depends on all) -->
+  <script src="js/gameEngine.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

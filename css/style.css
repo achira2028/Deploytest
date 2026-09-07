@@ -1,0 +1,543 @@
+/**
+ * style.css
+ * -----------------------------------------------------------------------
+ * Pure presentation layer — no JS was changed to build this, and every
+ * id/class the JS relies on (#status, .board, .cell, #restart-btn,
+ * #score-*, #first-player-*) is unchanged.
+ *
+ * Game-state-aware styling (turn / thinking / win / tie) is derived
+ * entirely from classes and attributes the existing JS already applies
+ * to cells (`.taken`, `.winning`, `:disabled`), using the CSS `:has()`
+ * relational selector to "look up" from #status into the board's state.
+ * See the "STATE-AWARE STATUS BANNER" section below.
+ *
+ * The footer's "Difficulty: Minimax AI" badge is a plain, non-interactive
+ * <span> rather than a real toggle — ai.js only ever runs a full Minimax
+ * search, so there is no second difficulty level to switch to yet. It's
+ * styled to sit comfortably next to the real first-move toggle without
+ * pretending to be clickable.
+ * -----------------------------------------------------------------------
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Fixed dark "gaming HUD" palette. */
+  --bg: #16222d;
+  --bg-elevated: #1c2b38;
+  --board-bg: #1a2833;
+  --text: #eef3f7;
+  --muted: #7e93a3;
+  --slate: #9db3c7; /* "muted slate" — used for the Ties stat */
+
+  /* Electric cyan (You / X) and vibrant coral pink (AI / O), each with an
+     -rgb twin so glows/tints can modulate alpha independently of hue. */
+  --accent-x-rgb: 34, 224, 255;
+  --accent-x: rgb(var(--accent-x-rgb));
+  --accent-x-soft: rgba(var(--accent-x-rgb), 0.16);
+
+  --accent-o-rgb: 255, 95, 129;
+  --accent-o: rgb(var(--accent-o-rgb));
+  --accent-o-soft: rgba(var(--accent-o-rgb), 0.14);
+
+  --grid-line: #3c5164;   /* thick grayish-blue inner grid lines */
+  --grid-thickness: 6px;
+
+  --win: #35d07f;
+  --win-soft: rgba(53, 208, 127, 0.16);
+  --tie: #b18cff;
+  --tie-soft: rgba(177, 140, 255, 0.16);
+  --thinking: #ffb85c;
+  --thinking-soft: rgba(255, 184, 92, 0.16);
+  --turn-soft: rgba(var(--accent-x-rgb), 0.16);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 24px 55px rgba(0, 0, 0, 0.55);
+
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --font-display: 'Outfit', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ------------------------- Full-viewport shell ----------------------- */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* no scrollbars, ever */
+}
+
+body {
+  height: 100vh;
+  width: 100vw;
+  color: var(--text);
+  font-family: var(--font-body);
+  /* Deep slate ambient highlights: soft, desaturated glows anchored to the
+     #16222D base — never as saturated as the neon mark colors, just enough
+     depth to keep the full-bleed background from feeling flat. */
+  background:
+    radial-gradient(circle at 12% 8%, rgba(60, 81, 100, 0.35), transparent 42%),
+    radial-gradient(circle at 88% 12%, rgba(45, 66, 87, 0.28), transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(35, 52, 68, 0.4), transparent 55%),
+    var(--bg);
+}
+
+.app {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --------------------------------- Header ---------------------------- */
+
+.app-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(10px, 3vw, 24px);
+  flex-wrap: wrap;
+  padding: clamp(10px, 2.4vh, 20px) clamp(16px, 4vw, 40px);
+  background: rgba(28, 43, 56, 0.6);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.brand h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.mark-x {
+  color: var(--accent-x);
+  font-weight: 700;
+}
+
+.mark-o {
+  color: var(--accent-o);
+  font-weight: 700;
+}
+
+/* ----------------------------- Scoreboard ----------------------------- */
+/* Crisp, low-clutter: three flat stat columns, no boxing or dividers. */
+
+.scoreboard {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 32px);
+}
+
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 52px;
+}
+
+.score-value {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 2.2vw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+/* YOU (X) → electric cyan · TIES → muted slate · AI (O) → coral pink */
+.score-item:nth-child(1) .score-value {
+  color: var(--accent-x);
+  text-shadow: 0 0 12px rgba(var(--accent-x-rgb), 0.45);
+}
+
+.score-item:nth-child(2) .score-value {
+  color: var(--slate);
+}
+
+.score-item:nth-child(3) .score-value {
+  color: var(--accent-o);
+  text-shadow: 0 0 12px rgba(var(--accent-o-rgb), 0.4);
+}
+
+.score-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ----------------------------- Board container ------------------------ */
+/* flex-grow fills all remaining vertical space between header and footer,
+   and perfectly centers the board (and its status pill) within it. */
+
+.board-container {
+  flex: 1 1 auto;
+  min-height: 0; /* let this flex child actually shrink inside the 100vh column */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vh, 24px);
+  padding: 10px;
+  overflow: hidden;
+}
+
+/* ------------------------- Turn indicator (base) ------------------------ */
+/* A centered, illuminated pill with a live pulsing status dot. Default =
+   "player's turn" look; state-specific overrides further down (and the
+   dot's currentColor) recolor it for thinking / win / tie automatically. */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 1.4em;
+  padding: 9px 22px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: var(--turn-soft);
+  color: var(--accent-x);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 24px rgba(var(--accent-x-rgb), 0.12);
+  transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor, 0 0 2px currentColor;
+  animation: status-dot-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes status-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.72); }
+}
+
+/* --------------------------------- Board ------------------------------ */
+/* Sized in vmin so it's always a perfect square that fits the shorter
+   viewport dimension — vertical phone or wide desktop alike. */
+
+.board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0;
+  width: 60vmin;
+  height: 60vmin;
+  max-width: 600px;
+  max-height: 600px;
+  background: var(--board-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden; /* clips corner cells to the rounded outer edge */
+  box-shadow: var(--shadow-lg);
+}
+
+.cell {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 13vmin, 5rem);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Border-free perimeter, classic inner grid only: thick, clean, grayish-
+   blue dividers. Columns 1 & 2 get a right line, rows 1 & 2 get a bottom
+   line; the four outer edges get none. */
+.cell:nth-child(3n+1),
+.cell:nth-child(3n+2) {
+  border-right: var(--grid-thickness) solid var(--grid-line);
+}
+
+.cell:nth-child(-n+6) {
+  border-bottom: var(--grid-thickness) solid var(--grid-line);
+}
+
+.cell:hover:not(.taken):not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.cell:active:not(.taken):not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.cell:focus-visible {
+  outline: 2px solid var(--accent-x);
+  outline-offset: -4px;
+}
+
+.cell:disabled {
+  cursor: not-allowed;
+}
+
+.cell.taken {
+  cursor: not-allowed;
+  animation: pop-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Glowing vector marks: high-contrast fill plus a soft layered neon
+   drop-shadow, tuned per mark color via the -rgb custom properties. */
+.cell.x {
+  color: var(--accent-x);
+  background: var(--accent-x-soft);
+  text-shadow: 0 0 10px rgba(var(--accent-x-rgb), 0.7), 0 0 26px rgba(var(--accent-x-rgb), 0.35);
+}
+
+.cell.o {
+  color: var(--accent-o);
+  background: var(--accent-o-soft);
+  text-shadow: 0 0 10px rgba(var(--accent-o-rgb), 0.7), 0 0 26px rgba(var(--accent-o-rgb), 0.35);
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.cell.winning {
+  background: var(--win-soft);
+  color: var(--win);
+  text-shadow: 0 0 12px rgba(53, 208, 127, 0.8), 0 0 30px rgba(53, 208, 127, 0.45);
+  animation: pop-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), win-glow 1.4s ease-in-out infinite;
+}
+
+@keyframes win-glow {
+  0%, 100% { box-shadow: inset 0 0 0 3px rgba(53, 208, 127, 0.35); }
+  50% { box-shadow: inset 0 0 0 3px rgba(53, 208, 127, 0.65); }
+}
+
+/* --------------------------------- Footer ------------------------------ */
+
+.app-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(10px, 3vw, 24px);
+  flex-wrap: wrap;
+  padding: clamp(10px, 2.4vh, 20px) clamp(16px, 4vw, 40px);
+  background: rgba(28, 43, 56, 0.6);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Left-hand cluster: first-move pills + the difficulty badge, side by side. */
+.footer-controls {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 3vw, 26px);
+  flex-wrap: wrap;
+}
+
+/* --------------------------- First-move toggle ------------------------ */
+
+.first-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.first-player-label,
+.difficulty-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.first-player-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toggle-btn:hover {
+  color: var(--text);
+}
+
+.toggle-btn.active {
+  background: var(--bg);
+  color: var(--accent-x);
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle-btn#first-player-ai.active {
+  color: var(--accent-o);
+}
+
+.toggle-btn:focus-visible {
+  outline: 2px solid var(--accent-x);
+  outline-offset: 2px;
+}
+
+/* ------------------------------ Difficulty badge ----------------------- */
+/* Informational only (see file header) — styled like a settled toggle
+   pill so it reads as part of the same control family, not a button. */
+
+.difficulty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.difficulty-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  color: var(--slate);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* -------------------------------- Restart ------------------------------ */
+
+.restart-btn {
+  padding: 11px 26px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent-x), #7de9ff);
+  color: #06222b;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm), 0 0 20px rgba(var(--accent-x-rgb), 0.25);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.restart-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), 0 0 26px rgba(var(--accent-x-rgb), 0.4);
+  filter: brightness(1.08);
+}
+
+.restart-btn:active {
+  transform: translateY(0);
+}
+
+.restart-btn:focus-visible {
+  outline: 2px solid var(--accent-x);
+  outline-offset: 3px;
+}
+
+/* ============== STATE-AWARE TURN INDICATOR (CSS-only) ================
+   Derives four distinct visual states purely from selectors that already
+   exist on the board — no JS/HTML changes required:
+     • WIN      → any .cell.winning exists
+     • TIE      → board is full (no .cell without .taken) and no winner
+     • THINKING → a .cell is disabled but the board isn't full/won
+                  (i.e. it's the AI's move)
+     • TURN     → none of the above — the base .status style already
+                  covers this as the default.
+   Each selector below is more specific than the plain `.status` rule
+   above (thanks to the #status id + the :has() conditions), so it wins
+   the cascade only while its condition is true. The pulsing dot and its
+   glow both use currentColor, so they recolor automatically with no
+   extra rules needed.
+   ==================================================================== */
+
+.app:has(.cell:disabled):has(.cell:not(.taken)):not(:has(.cell.winning)) #status {
+  background: var(--thinking-soft);
+  color: var(--thinking);
+}
+
+.app:not(:has(.cell.winning)):not(:has(.cell:not(.taken))) #status {
+  background: var(--tie-soft);
+  color: var(--tie);
+}
+
+.app:has(.cell.winning) #status {
+  background: var(--win-soft);
+  color: var(--win);
+  transform: scale(1.04);
+}
+
+/* ------------------------------- Small screens -------------------------- */
+
+@media (max-width: 560px) {
+  .app-header,
+  .app-footer {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footer-controls {
+    justify-content: center;
+  }
+}
+
+/* Extra headroom safeguard: on very short/landscape viewports, shrink the
+   board below the base 60vmin so it can never be clipped by the fixed
+   header/footer bars under `overflow: hidden`. */
+@media (max-height: 480px) {
+  .board {
+    width: 46vmin;
+    height: 46vmin;
+  }
+}
+
+/* -------------------------------- Reduced motion ------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .cell,
+  .cell.taken,
+  .cell.winning,
+  .restart-btn,
+  .status,
+  .status::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
