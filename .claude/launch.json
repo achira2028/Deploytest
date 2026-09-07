@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "tictactoe-static-server",
+      "name": "tictactoe",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "5500"],
-      "port": 5500
+      "runtimeArgs": ["-m", "http.server", "8791"],
+      "port": 8791
     }
   ]
 }

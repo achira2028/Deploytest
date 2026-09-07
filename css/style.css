@@ -136,6 +136,68 @@ body {
   font-weight: 700;
 }
 
+/* ------------------------- Header right-hand cluster ------------------- */
+/* Timer, scoreboard, and the mute toggle, grouped so they wrap together
+   as one unit on narrow screens instead of spreading out awkwardly. */
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 3vw, 26px);
+  flex-wrap: wrap;
+}
+
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-icon {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.icon-btn {
+  flex: 0 0 auto;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text);
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--accent-x);
+  outline-offset: 2px;
+}
+
 /* ----------------------------- Scoreboard ----------------------------- */
 /* Crisp, low-clutter: three flat stat columns, no boxing or dividers. */
 
@@ -338,6 +400,29 @@ body {
   50% { box-shadow: inset 0 0 0 3px rgba(53, 208, 127, 0.65); }
 }
 
+/* ------------------------------ Keyboard hint --------------------------- */
+
+.kbd-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.kbd-hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
 /* --------------------------------- Footer ------------------------------ */
 
 .app-footer {
@@ -370,7 +455,8 @@ body {
 }
 
 .first-player-label,
-.difficulty-label {
+.difficulty-label,
+.skin-label {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
@@ -413,6 +499,44 @@ body {
 }
 
 .toggle-btn:focus-visible {
+  outline: 2px solid var(--accent-x);
+  outline-offset: 2px;
+}
+
+/* ------------------------------- Skin picker ---------------------------- */
+/* A real, clickable control (unlike the difficulty badge): cycles through
+   SKINS in app.js, previewing the current pair right on the button. */
+
+.skin-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skin-btn {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.skin-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 16px rgba(var(--accent-x-rgb), 0.18);
+}
+
+.skin-btn:active {
+  transform: scale(0.96);
+}
+
+.skin-btn:focus-visible {
   outline: 2px solid var(--accent-x);
   outline-offset: 2px;
 }
@@ -513,7 +637,8 @@ body {
     text-align: center;
   }
 
-  .footer-controls {
+  .footer-controls,
+  .header-right {
     justify-content: center;
   }
 }
